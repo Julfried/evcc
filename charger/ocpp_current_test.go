@@ -17,11 +17,14 @@ func (suite *ocppTestSuite) TestCurrentControl() {
 
 	for _, tc := range []struct {
 		name      string
+		template  string
 		milliamps bool
 	}{
-		{"default", true},
-		{"milliamps", true},
-		{"whole-amps", false},
+		{"default", "", true},
+		{"milliamps", "", true},
+		{"whole-amps", "", false},
+		{"go-e", "ocpp-goe", false},
+		{"wattpilot", "ocpp-fronius-wattpilot", false},
 	} {
 		suite.Run(tc.name, func() {
 			t := suite.T()
@@ -31,11 +34,15 @@ func (suite *ocppTestSuite) TestCurrentControl() {
 			cp.SetSmartChargingHandler(h)
 			require.NoError(t, cp.Start(ocppTestUrl))
 
+			typ := "ocpp"
 			config := map[string]any{"stationid": id, "connecttimeout": ocppTestConnectTimeout.String()}
-			if tc.name != "default" {
+			if tc.template != "" {
+				typ = "template"
+				config["template"] = tc.template
+			} else if tc.name != "default" {
 				config["milliamps"] = tc.milliamps
 			}
-			c, err := NewFromConfig(t.Context(), "ocpp", config)
+			c, err := NewFromConfig(t.Context(), typ, config)
 			require.NoError(t, err)
 
 			ex, ok := api.Cap[api.ChargerEx](c)

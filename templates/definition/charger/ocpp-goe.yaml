@@ -32,3 +32,4 @@ params:
   - preset: ocpp
 render: |
   {{ include "ocpp" . }}
+  milliamps: false
