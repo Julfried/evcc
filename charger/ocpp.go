@@ -71,6 +71,7 @@ func NewOCPPFromConfig(ctx context.Context, other map[string]any) (api.Charger, 
 		MeterInterval  time.Duration
 		MeterValues    string
 		ConnectTimeout time.Duration // Initial Timeout
+		Milliamps      bool
 
 		Timeout          time.Duration              // TODO deprecated
 		BootNotification *bool                      // TODO deprecated
@@ -89,6 +90,7 @@ func NewOCPPFromConfig(ctx context.Context, other map[string]any) (api.Charger, 
 		Connector:       1,
 		MeterInterval:   10 * time.Second,
 		ConnectTimeout:  5 * time.Minute,
+		Milliamps:       true,
 		ChargingProfile: types.ChargingProfilePurposeTxDefaultProfile,
 	}
 
@@ -119,6 +121,10 @@ func NewOCPPFromConfig(ctx context.Context, other map[string]any) (api.Charger, 
 		return nil, api.ErrSponsorRequired
 	}
 	c.txProfile = cc.ChargingProfile == types.ChargingProfilePurposeTxProfile
+
+	if cc.Milliamps {
+		implement.Has(c, implement.ChargerEx(c.maxCurrentMillis))
+	}
 
 	if c.cp.HasMeasurement(types.MeasurandPowerActiveImport) {
 		implement.Has(c, implement.Meter(c.conn.CurrentPower))
@@ -443,13 +449,10 @@ func (c *OCPP) GetMaxCurrent() (float64, error) {
 
 // MaxCurrent implements the api.Charger interface
 func (c *OCPP) MaxCurrent(current int64) error {
-	return c.MaxCurrentMillis(float64(current))
+	return c.maxCurrentMillis(float64(current))
 }
 
-var _ api.ChargerEx = (*OCPP)(nil)
-
-// MaxCurrentMillis implements the api.ChargerEx interface
-func (c *OCPP) MaxCurrentMillis(current float64) error {
+func (c *OCPP) maxCurrentMillis(current float64) error {
 	err := c.setCurrent(current)
 	if err == nil {
 		c.current = current

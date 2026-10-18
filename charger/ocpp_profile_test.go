@@ -130,6 +130,8 @@ func (suite *ocppTestSuite) TestTransactionProfiles() {
 	})
 	require.NoError(t, err)
 	c := charger.(*OCPP)
+	ex, ok := api.Cap[api.ChargerEx](charger)
+	require.True(t, ok)
 
 	expectProfile := func(purpose types.ChargingProfilePurposeType, txID int, current float64) {
 		t.Helper()
@@ -147,7 +149,7 @@ func (suite *ocppTestSuite) TestTransactionProfiles() {
 	for _, status := range []core.ChargePointStatus{core.ChargePointStatusCharging, core.ChargePointStatusSuspendedEV, core.ChargePointStatusSuspendedEVSE} {
 		_, err = cp.StatusNotification(1, core.NoError, status)
 		require.NoError(t, err)
-		require.ErrorIs(t, c.MaxCurrentMillis(7.25), api.ErrNotAvailable)
+		require.ErrorIs(t, ex.MaxCurrentMillis(7.25), api.ErrNotAvailable)
 		require.Empty(t, h.profiles)
 	}
 	recoveredID := 77
@@ -166,7 +168,7 @@ func (suite *ocppTestSuite) TestTransactionProfiles() {
 	_, err = c.Status()
 	require.NoError(t, err)
 	expectProfile(types.ChargingProfilePurposeTxDefaultProfile, 0, 0)
-	require.NoError(t, c.MaxCurrentMillis(7.25))
+	require.NoError(t, ex.MaxCurrentMillis(7.25))
 	expectProfile(types.ChargingProfilePurposeTxDefaultProfile, 0, 7.2)
 
 	start, err := cp.StartTransaction(1, "tag", 0, types.NewDateTime(time.Now()))
@@ -212,7 +214,7 @@ func (suite *ocppTestSuite) TestTransactionProfiles() {
 
 	stop()
 	require.Eventually(t, func() bool { return !c.cp.Connected() }, time.Second, 10*time.Millisecond)
-	require.ErrorIs(t, c.MaxCurrentMillis(10), api.ErrTimeout)
+	require.ErrorIs(t, ex.MaxCurrentMillis(10), api.ErrTimeout)
 }
 
 func (suite *ocppTestSuite) TestDefaultProfiles() {
