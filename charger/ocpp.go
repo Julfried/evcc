@@ -452,6 +452,7 @@ func (c *OCPP) MaxCurrent(current int64) error {
 	return c.maxCurrentMillis(float64(current))
 }
 
+// maxCurrentMillis provides current control for the optional api.ChargerEx capability.
 func (c *OCPP) maxCurrentMillis(current float64) error {
 	err := c.setCurrent(current)
 	if err == nil {
